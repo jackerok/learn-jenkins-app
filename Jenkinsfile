@@ -3,45 +3,63 @@ pipeline {
     
     stages {
         // Шаг 1: Получить код из Git
-        stage('Get Code') {
+        stage('Checkout') {
             steps {
-                echo '📦 Getting code from Git...'
+                echo '📦 Checking out code from Git...'
                 checkout scm
             }
         }
         
         // Шаг 2: Установить зависимости
-        stage('Install') {
+        stage('Install Dependencies') {
             steps {
-                echo '📥 Installing dependencies...'
+                echo '📥 Installing npm dependencies...'
                 bat 'npm install'
             }
         }
         
         // Шаг 3: Запустить тесты
-        stage('Test') {
+        stage('Run Tests') {
             steps {
                 echo '🧪 Running tests...'
-                bat 'npm test'
+                // --watchAll=false чтобы не зависло
+                bat 'npm test -- --watchAll=false'
             }
         }
         
         // Шаг 4: Собрать приложение
-        stage('Build') {
+        stage('Build Application') {
             steps {
-                echo '🔨 Building application...'
+                echo '🔨 Building React application...'
                 bat 'npm run build'
+            }
+        }
+        
+        // Шаг 5: Архивировать результат сборки
+        stage('Archive Build') {
+            steps {
+                echo '📦 Archiving build artifacts...'
+                archiveArtifacts artifacts: 'build/**/*', allowEmptyArchive: true
             }
         }
     }
     
-    // Что делать после выполнения
+    // Действия после выполнения pipeline
     post {
         success {
-            echo '✅ Everything is OK!'
+            echo '✅ Pipeline completed successfully!'
+            echo '🎉 Build artifacts are ready in the build/ folder'
         }
+        
         failure {
-            echo '❌ Something failed!'
+            echo '❌ Pipeline failed!'
+            echo '📋 Check the console output for errors'
+        }
+        
+        always {
+            echo '🏁 Pipeline execution finished'
+            echo "Build Number: ${env.BUILD_NUMBER}"
+            echo "Branch: ${env.BRANCH_NAME ?: 'main'}"
         }
     }
 }
