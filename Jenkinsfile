@@ -2,33 +2,46 @@ pipeline {
     agent any
     
     stages {
-        stage('Build') {
+        // Шаг 1: Получить код из Git
+        stage('Get Code') {
             steps {
-                script {
-                    // Запускаем Docker контейнер и выполняем команды внутри
-                    bat '''
-                        docker run --rm ^
-                        -v "%WORKSPACE%":/app ^
-                        -w /app ^
-                        node:18-alpine ^
-                        sh -c "npm --version && npm ci && npm run build"
-                    '''
-                }
+                echo '📦 Getting code from Git...'
+                checkout scm
             }
         }
         
+        // Шаг 2: Установить зависимости
+        stage('Install') {
+            steps {
+                echo '📥 Installing dependencies...'
+                bat 'npm install'
+            }
+        }
+        
+        // Шаг 3: Запустить тесты
         stage('Test') {
             steps {
-                script {
-                    bat '''
-                        docker run --rm ^
-                        -v "%WORKSPACE%":/app ^
-                        -w /app ^
-                        node:18-alpine ^
-                        sh -c "npm test"
-                    '''
-                }
+                echo '🧪 Running tests...'
+                bat 'npm test'
             }
+        }
+        
+        // Шаг 4: Собрать приложение
+        stage('Build') {
+            steps {
+                echo '🔨 Building application...'
+                bat 'npm run build'
+            }
+        }
+    }
+    
+    // Что делать после выполнения
+    post {
+        success {
+            echo '✅ Everything is OK!'
+        }
+        failure {
+            echo '❌ Something failed!'
         }
     }
 }
