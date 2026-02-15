@@ -3,16 +3,31 @@ pipeline {
     
     stages {
         stage('Build') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true  // <-- ДОБАВИТЬ ЭТО
+            steps {
+                script {
+                    // Запускаем Docker контейнер и выполняем команды внутри
+                    bat '''
+                        docker run --rm ^
+                        -v "%WORKSPACE%":/app ^
+                        -w /app ^
+                        node:18-alpine ^
+                        sh -c "npm --version && npm ci && npm run build"
+                    '''
                 }
             }
+        }
+        
+        stage('Test') {
             steps {
-                sh 'npm --version'
-                sh 'npm ci'
-                sh 'npm run build'
+                script {
+                    bat '''
+                        docker run --rm ^
+                        -v "%WORKSPACE%":/app ^
+                        -w /app ^
+                        node:18-alpine ^
+                        sh -c "npm test"
+                    '''
+                }
             }
         }
     }
